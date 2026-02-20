@@ -1,0 +1,32 @@
+# NEVER commit these files to Git!
+# They contain sensitive credentials
+
+# Android signing
+android/key.properties
+android/app/upload-keystore.jks
+android/app/*.jks
+android/app/*.keystore
+
+# iOS signing
+ios/Runner.xcworkspace/xcuserdata/
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+
+# API Keys
+.env
+.env.local
+.env.production
+google-maps-api-key.txt
+
+# Build outputs
+build/
+*.apk
+*.aab
+*.ipa
+*.dSYM.zip
+
+# Store assets (keep originals elsewhere)
+store-assets/screenshots/*.png
+store-assets/graphics/*.png
