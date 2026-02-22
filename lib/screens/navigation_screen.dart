@@ -66,15 +66,23 @@ class _NavigationScreenState extends State<NavigationScreen> {
           accelerometerService.resetWithNewBase(position);
         }
 
-        _updateDisplay(position);
+        // Catch any async errors to prevent unhandled exception crashes
+        _updateDisplay(position).catchError((e) {
+          debugPrint('_updateDisplay error: $e');
+        });
       }
     });
 
+    // Capture detector reference before the listener fires to avoid unsafe context access
     accelerometerService.addListener(() {
-      final detector = context.read<UndergroundDetector>();
-      if (detector.isUnderground) {
+      if (!mounted) return;
+      if (undergroundDetector.isUnderground) {
         final est = accelerometerService.estimatedPosition;
-        if (est != null) _updateDisplay(est);
+        if (est != null) {
+          _updateDisplay(est).catchError((e) {
+            debugPrint('_updateDisplay accel error: $e');
+          });
+        }
       }
     });
   }

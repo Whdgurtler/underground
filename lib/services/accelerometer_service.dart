@@ -44,20 +44,28 @@ class AccelerometerService extends ChangeNotifier {
     _previousAcceleration = vmath.Vector3.zero();
     
     // Listen to accelerometer
-    _accelerometerSubscription = accelerometerEventStream().listen(
-      _handleAccelerometerEvent,
-      onError: (error) {
-        debugPrint('Accelerometer error: $error');
-      },
-    );
-    
-    // Listen to gyroscope for heading
-    _gyroscopeSubscription = gyroscopeEventStream().listen(
-      _handleGyroscopeEvent,
-      onError: (error) {
-        debugPrint('Gyroscope error: $error');
-      },
-    );
+    try {
+      _accelerometerSubscription = accelerometerEventStream().listen(
+        _handleAccelerometerEvent,
+        onError: (error) {
+          debugPrint('Accelerometer error: $error');
+        },
+      );
+    } catch (e) {
+      debugPrint('Accelerometer not available: $e');
+    }
+
+    // Listen to gyroscope for heading (optional — not all devices have one)
+    try {
+      _gyroscopeSubscription = gyroscopeEventStream().listen(
+        _handleGyroscopeEvent,
+        onError: (error) {
+          debugPrint('Gyroscope error: $error');
+        },
+      );
+    } catch (e) {
+      debugPrint('Gyroscope not available: $e');
+    }
     
     notifyListeners();
   }

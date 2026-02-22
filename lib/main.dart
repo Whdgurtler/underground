@@ -18,17 +18,14 @@ class UndergroundTorontoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Create PathDataService once so MapMatchingService can reference it directly
-    final pathDataService = PathDataService();
-
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => LocationService()),
         ChangeNotifierProvider(create: (_) => AccelerometerService()),
         ChangeNotifierProvider(create: (_) => UndergroundDetector()),
-        ChangeNotifierProvider.value(value: pathDataService),
+        ChangeNotifierProvider(create: (_) => PathDataService()),
         ChangeNotifierProvider(
-          create: (_) => MapMatchingService(pathDataService),
+          create: (ctx) => MapMatchingService(ctx.read<PathDataService>()),
         ),
         ChangeNotifierProvider(create: (_) => WifiFingerprintService()),
       ],
