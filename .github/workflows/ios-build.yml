@@ -1,0 +1,86 @@
+name: iOS Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: # allow manual trigger from GitHub UI
+
+jobs:
+  build-ios:
+    name: Build iOS IPA
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # The ios/ directory in this repo is missing its Xcode project files
+      # because those are generated on macOS. Regenerate them here without
+      # touching our existing AppDelegate.swift / Info.plist / etc.
+      - name: Generate Xcode project (if missing)
+        run: |
+          if [ ! -d "ios/Runner.xcodeproj" ]; then
+            echo "Xcode project missing — regenerating via flutter create"
+            flutter create --platforms=ios .
+          else
+            echo "Xcode project already present"
+          fi
+
+      - name: Install CocoaPods dependencies
+        run: |
+          cd ios
+          pod install --repo-update
+        env:
+          # Suppress CocoaPods master repo update output spam
+          COCOAPODS_DISABLE_STATS: true
+
+      - name: Build iOS (unsigned)
+        run: flutter build ios --release --no-codesign
+
+      # Package the .app into an IPA so it can be downloaded as an artifact.
+      # Note: unsigned IPAs cannot be installed on a real device directly —
+      # you need to re-sign with your own cert (e.g. via AltStore or Xcode).
+      - name: Package IPA
+        run: |
+          mkdir -p Payload
+          cp -r build/ios/iphoneos/Runner.app Payload/
+          zip -r UndergroundToronto-unsigned.ipa Payload/
+          echo "IPA size: $(du -sh UndergroundToronto-unsigned.ipa | cut -f1)"
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: UndergroundToronto-iOS-unsigned
+          path: UndergroundToronto-unsigned.ipa
+          retention-days: 30
+
+      # Optional: if you add signing secrets later, uncomment this block.
+      # Secrets needed: IOS_CERTIFICATE_BASE64, IOS_CERTIFICATE_PASSWORD,
+      #                 IOS_PROVISIONING_PROFILE_BASE64, IOS_TEAM_ID
+      #
+      # - name: Import signing certificate
+      #   if: ${{ secrets.IOS_CERTIFICATE_BASE64 != '' }}
+      #   env:
+      #     CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
+      #     CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+      #     KEYCHAIN_PASSWORD: temp-keychain-password
+      #   run: |
+      #     security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+      #     security default-keychain -s build.keychain
+      #     security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+      #     echo "$CERTIFICATE_BASE64" | base64 --decode > certificate.p12
+      #     security import certificate.p12 -k build.keychain \
+      #       -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+      #     security set-key-partition-list -S apple-tool:,apple: \
+      #       -s -k "$KEYCHAIN_PASSWORD" build.keychain

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -68,14 +69,17 @@ class WifiFingerprintService extends ChangeNotifier {
 
     await _loadDb();
 
-    try {
-      final canScan = await WiFiScan.instance.canGetScannedResults(
-        askPermissions: true,
-      );
-      _isAvailable = canScan == CanGetScannedResults.yes;
-    } catch (e) {
-      _isAvailable = false;
-      debugPrint('WifiFingerprintService: WiFi scan not available – $e');
+    // wifi_scan is Android-only; skip initialisation entirely on iOS
+    if (Platform.isAndroid) {
+      try {
+        final canScan = await WiFiScan.instance.canGetScannedResults(
+          askPermissions: true,
+        );
+        _isAvailable = canScan == CanGetScannedResults.yes;
+      } catch (e) {
+        _isAvailable = false;
+        debugPrint('WifiFingerprintService: WiFi scan not available – $e');
+      }
     }
 
     _isInitialized = true;
@@ -87,7 +91,7 @@ class WifiFingerprintService extends ChangeNotifier {
   // ──────────────────────────────────────────────────────────────
 
   Future<bool> recordFingerprint(Position knownPosition) async {
-    if (!_isAvailable) return false;
+    if (!_isAvailable || !Platform.isAndroid) return false;
 
     try {
       final canStart = await WiFiScan.instance.canStartScan(
@@ -133,7 +137,7 @@ class WifiFingerprintService extends ChangeNotifier {
   // ──────────────────────────────────────────────────────────────
 
   Future<Position?> estimatePosition() async {
-    if (!_isAvailable || _db.isEmpty) return null;
+    if (!_isAvailable || _db.isEmpty || !Platform.isAndroid) return null;
 
     try {
       final results = await WiFiScan.instance.getScannedResults();
