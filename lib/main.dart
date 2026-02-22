@@ -9,6 +9,7 @@ import 'services/map_matching_service.dart';
 import 'services/wifi_fingerprint_service.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const UndergroundTorontoApp());
 }
 
@@ -17,15 +18,17 @@ class UndergroundTorontoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Create PathDataService once so MapMatchingService can reference it directly
+    final pathDataService = PathDataService();
+
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => LocationService()),
         ChangeNotifierProvider(create: (_) => AccelerometerService()),
         ChangeNotifierProvider(create: (_) => UndergroundDetector()),
-        ChangeNotifierProvider(create: (_) => PathDataService()),
-        ChangeNotifierProxyProvider<PathDataService, MapMatchingService>(
-          create: (ctx) => MapMatchingService(ctx.read<PathDataService>()),
-          update: (ctx, pathData, prev) => prev ?? MapMatchingService(pathData),
+        ChangeNotifierProvider.value(value: pathDataService),
+        ChangeNotifierProvider(
+          create: (_) => MapMatchingService(pathDataService),
         ),
         ChangeNotifierProvider(create: (_) => WifiFingerprintService()),
       ],

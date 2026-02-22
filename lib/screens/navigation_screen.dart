@@ -32,7 +32,14 @@ class _NavigationScreenState extends State<NavigationScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeServices();
+    // Defer until after the first frame so the widget tree and map are ready
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _initializeServices().catchError((e) {
+          debugPrint('NavigationScreen init error: $e');
+        });
+      }
+    });
   }
 
   Future<void> _initializeServices() async {
@@ -78,6 +85,8 @@ class _NavigationScreenState extends State<NavigationScreen> {
   ///     → map matching to PATH corridor
   ///     → display
   Future<void> _updateDisplay(Position raw) async {
+    // Read context values before any async gap
+    if (!mounted) return;
     final mapMatcher = context.read<MapMatchingService>();
     final wifiService = context.read<WifiFingerprintService>();
     final detector = context.read<UndergroundDetector>();
@@ -87,6 +96,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
     if (detector.isUnderground) {
       // 1. Try WiFi position estimate
       final wifiPos = await wifiService.estimatePosition();
+      if (!mounted) return; // Widget may have been disposed during the await
       if (wifiPos != null) best = wifiPos;
 
       // 2. Try map matching (snaps to PATH corridor)
@@ -97,6 +107,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
     final latLng = LatLng(best.latitude, best.longitude);
     _historyPoints.add(latLng);
 
+    if (!mounted) return;
     setState(() {
       _displayPosition = best;
 
@@ -124,7 +135,10 @@ class _NavigationScreenState extends State<NavigationScreen> {
       ));
     });
 
-    _mapController.move(latLng, 18.0);
+    // Guard against map not being ready on first position update
+    try {
+      _mapController.move(latLng, 18.0);
+    } catch (_) {}
   }
 
   Color _sourceColor(PositionSource source) {
@@ -436,7 +450,9 @@ class _NavigationScreenState extends State<NavigationScreen> {
   void _centerOnCurrentLocation() {
     final pos = _displayPosition;
     if (pos != null) {
-      _mapController.move(LatLng(pos.latitude, pos.longitude), 18.0);
+      try {
+        _mapController.move(LatLng(pos.latitude, pos.longitude), 18.0);
+      } catch (_) {}
     }
   }
 
