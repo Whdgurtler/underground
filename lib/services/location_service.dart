@@ -11,11 +11,14 @@ class LocationService extends ChangeNotifier {
   StreamSubscription<geo.Position>? _positionSubscription;
   String? _errorMessage;
   double _accuracy = 0.0;
+  double _heading = 0.0;
 
   Position? get currentPosition => _currentPosition;
   bool get isTracking => _isTracking;
   String? get errorMessage => _errorMessage;
   double get accuracy => _accuracy;
+  /// GPS course in degrees (0 = north, 90 = east). Only valid while moving.
+  double get heading => _heading;
 
   /// Initialize and request location permissions
   Future<bool> requestPermissions() async {
@@ -112,6 +115,10 @@ class LocationService extends ChangeNotifier {
       source: PositionSource.gps,
     );
     _accuracy = geoPosition.accuracy;
+    // heading is only meaningful when speed > ~0.5 m/s; keep last value otherwise
+    if (geoPosition.speed > 0.5) {
+      _heading = geoPosition.heading;
+    }
     _errorMessage = null;
     notifyListeners();
   }

@@ -43,7 +43,7 @@ android {
     defaultConfig {
         applicationId "com.underground.toronto"
         minSdkVersion flutter.minSdkVersion
-        targetSdk 36
+        targetSdk 34
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
@@ -62,5 +62,6 @@ flutter {
 }
 
 dependencies {
-    implementation 'com.google.android.gms:play-services-location:21.1.0'
+    // play-services-location is pulled in by geolocator_android automatically.
+    // Pinning a specific version here can cause conflicts — let geolocator manage it.
 }
