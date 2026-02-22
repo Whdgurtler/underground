@@ -34,9 +34,13 @@
     <!-- Permissions for Sensors -->
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
     
-    <!-- Internet for Maps -->
+    <!-- Internet for Maps + Overpass API -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+
+    <!-- WiFi scanning for fingerprinting -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
     
     <!-- Hardware features -->
     <uses-feature android:name="android.hardware.location.gps" />

@@ -4,6 +4,9 @@ import 'screens/navigation_screen.dart';
 import 'services/location_service.dart';
 import 'services/accelerometer_service.dart';
 import 'services/underground_detector.dart';
+import 'services/path_data_service.dart';
+import 'services/map_matching_service.dart';
+import 'services/wifi_fingerprint_service.dart';
 
 void main() {
   runApp(const UndergroundTorontoApp());
@@ -19,6 +22,12 @@ class UndergroundTorontoApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => LocationService()),
         ChangeNotifierProvider(create: (_) => AccelerometerService()),
         ChangeNotifierProvider(create: (_) => UndergroundDetector()),
+        ChangeNotifierProvider(create: (_) => PathDataService()),
+        ChangeNotifierProxyProvider<PathDataService, MapMatchingService>(
+          create: (ctx) => MapMatchingService(ctx.read<PathDataService>()),
+          update: (ctx, pathData, prev) => prev ?? MapMatchingService(pathData),
+        ),
+        ChangeNotifierProvider(create: (_) => WifiFingerprintService()),
       ],
       child: MaterialApp(
         title: 'Underground Toronto Navigator',

@@ -42,6 +42,8 @@ enum PositionSource {
   gps,
   accelerometer,
   estimated,
+  mapMatched,
+  wifi,
 }
 
 /// Represents movement data from accelerometer
